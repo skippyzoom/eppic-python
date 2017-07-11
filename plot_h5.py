@@ -8,7 +8,8 @@ import importlib.machinery
 import eppic_io
 
 ## Declare quantity to plot
-dataName = 'den1'
+dataName = 'phi'
+colorMap = 'seismic'
 plotType = 'png'
 
 ## Set the project directory and import variables
@@ -16,46 +17,29 @@ baseDir = '/projectnb/eregion/may/Stampede_runs/'
 projDir = 'quasineutral_static_dust/run009/'
 path = baseDir+projDir
 posixPath = Path(path)
-# sys.path.append(baseDir+projDir)
-# from eppic import *
 eppic = importlib.machinery.SourceFileLoader('eppic',path+'eppic.py').load_module()
+
+## Declare data plot ranges
+## -->Eventually want to import these from a parameter file
+x0 = 0
+xf = eppic.nx*eppic.nsubdomains/eppic.nout_avg
+y0 = (eppic.ny/4)/eppic.nout_avg
+yf = (3*eppic.ny/4)/eppic.nout_avg
 
 ## Choose time steps to plot
 ntMax = eppic_io.calc_timesteps(path)
 timeStep = [1,ntMax-1]
 
-## Load data
-# fileName = ['parallel'] * len(timeStep)
-# for ts in range(len(timeStep)):
-#     fileName[ts] += '{:06d}'.format(timeStep[ts])+'.h5'
-# dataPath = path/fileName[0]
-
-# den = []
+## Loop over time steps and plot
 for ts in range(len(timeStep)):
-    # stepName = 'parallel{:06d}'.format(eppic.nout*timeStep[ts])
-    # fileName = stepName+'.h5'
-    # plotName = stepName+'.pdf'
     strStep = '{:06d}'.format(eppic.nout*timeStep[ts])
     fileName = 'parallel'+strStep+'.h5'
     plotName = dataName+'_'+strStep+'.'+plotType
     print("Reading",fileName)
     with h5py.File(path+'parallel/'+fileName,'r') as f:
-        data = np.rot90(f['/'+dataName][:,512-256:512+256],3)
-    print(data.shape)
+        data = np.rot90(f['/'+dataName][int(x0):int(xf),int(y0):int(yf)],3)
     print("Plotting",plotName)
-    plt.pcolormesh(data)
+    plt.pcolormesh(data,cmap=colorMap)
     plt.colorbar()
     plt.savefig(path+plotName)
     plt.close()
-
-# den = np.array(den)
-# print(den.shape)
-# print(den[0,:,:].shape)
-# # # Only plots the last time step
-# # plt.pcolormesh(den)
-# # plt.colorbar()
-# # # plt.show()
-# # pdfName = 'den.pdf'
-# # print("Saving",pdfName)
-# # plt.savefig(baseDir+projDir+pdfName)
-# # plt.close()
