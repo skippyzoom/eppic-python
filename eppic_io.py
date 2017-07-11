@@ -36,22 +36,6 @@ def calc_timesteps(path='./'):
 
     fn_list = [path+'/moments1.out', path+'/moments0.out']
     fn_list.extend([path+'/domain000/moments1.out', path+'/domain000/moments0.out'])
-    # if os.path.exists(fn):
-    #     with open(fn) as f:
-    #         print("Calculating time steps from",fn)
-    #         return sum(1 for _ in f)
-    # elif os.path.exists(fn):
-    #     with open(fn) as f:
-    #         print("Calculating time steps from",fn)
-    #         return sum(1 for _ in f)
-    # elif os.path.exists(fn):
-    #     with open(fn) as f:
-    #         print("Calculating time steps from",fn)
-    #         return sum(1 for _ in f)
-    # elif os.path.exists(fn):
-    #     with open(fn) as f:
-    #         print("Calculating time steps from",fn)
-    #         return sum(1 for _ in f)
     for i,fn in enumerate(fn_list):
         if os.path.exists(fn):
             with open(fn) as f:

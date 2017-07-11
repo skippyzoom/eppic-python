@@ -3,36 +3,49 @@ import h5py
 import numpy as np
 import os, sys
 from pathlib import Path
-# from matplotlib.pyplot import figure,show
 import matplotlib.pyplot as plt
 import importlib.machinery
+import eppic_io
+
+## Declare quantity to plot
+dataName = 'den1'
+plotType = 'png'
 
 ## Set the project directory and import variables
 baseDir = '/projectnb/eregion/may/Stampede_runs/'
 projDir = 'quasineutral_static_dust/run009/'
+path = baseDir+projDir
+posixPath = Path(path)
 # sys.path.append(baseDir+projDir)
 # from eppic import *
-eppic = importlib.machinery.SourceFileLoader('eppic',baseDir+projDir+'eppic.py').load_module()
-path = Path(baseDir+projDir+'parallel')
-# nout = 32
-timestep = [256,512]
-# fileName = ['parallel'] * len(timestep)
-# for ts in range(len(timestep)):
-#     fileName[ts] += '{:06d}'.format(timestep[ts])+'.h5'
+eppic = importlib.machinery.SourceFileLoader('eppic',path+'eppic.py').load_module()
+
+## Choose time steps to plot
+ntMax = eppic_io.calc_timesteps(path)
+timeStep = [1,ntMax-1]
+
+## Load data
+# fileName = ['parallel'] * len(timeStep)
+# for ts in range(len(timeStep)):
+#     fileName[ts] += '{:06d}'.format(timeStep[ts])+'.h5'
 # dataPath = path/fileName[0]
 
-den = []
-for ts in range(len(timestep)):
-    stepName = 'parallel{:06d}'.format(nout*timestep[ts])
-    fileName = stepName+'.h5'
-    plotName = stepName+'.pdf'
+# den = []
+for ts in range(len(timeStep)):
+    # stepName = 'parallel{:06d}'.format(eppic.nout*timeStep[ts])
+    # fileName = stepName+'.h5'
+    # plotName = stepName+'.pdf'
+    strStep = '{:06d}'.format(eppic.nout*timeStep[ts])
+    fileName = 'parallel'+strStep+'.h5'
+    plotName = dataName+'_'+strStep+'.'+plotType
     print("Reading",fileName)
-    with h5py.File(path/fileName,'r') as f:
-        den = np.rot90(f['/den1'][:,512-256:512+255],3)
+    with h5py.File(path+'parallel/'+fileName,'r') as f:
+        data = np.rot90(f['/'+dataName][:,512-256:512+256],3)
+    print(data.shape)
     print("Plotting",plotName)
-    plt.pcolormesh(den)
+    plt.pcolormesh(data)
     plt.colorbar()
-    plt.savefig(baseDir+projDir+plotName)
+    plt.savefig(path+plotName)
     plt.close()
 
 # den = np.array(den)
