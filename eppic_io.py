@@ -28,3 +28,35 @@ def clean_params(path='./'):
     rf.close()
     wf.close()
     print("Created",wfn)
+
+def calc_timesteps(path='./'):
+    """Calculate the actual number of time steps in a simulation run."""
+
+    import os, glob
+
+    fn_list = [path+'/moments1.out', path+'/moments0.out']
+    fn_list.extend([path+'/domain000/moments1.out', path+'/domain000/moments0.out'])
+    # if os.path.exists(fn):
+    #     with open(fn) as f:
+    #         print("Calculating time steps from",fn)
+    #         return sum(1 for _ in f)
+    # elif os.path.exists(fn):
+    #     with open(fn) as f:
+    #         print("Calculating time steps from",fn)
+    #         return sum(1 for _ in f)
+    # elif os.path.exists(fn):
+    #     with open(fn) as f:
+    #         print("Calculating time steps from",fn)
+    #         return sum(1 for _ in f)
+    # elif os.path.exists(fn):
+    #     with open(fn) as f:
+    #         print("Calculating time steps from",fn)
+    #         return sum(1 for _ in f)
+    for i,fn in enumerate(fn_list):
+        if os.path.exists(fn):
+            with open(fn) as f:
+                print("Calculating time steps from",fn)
+                return sum(1 for _ in f)-1
+    if os.path.exists(path+'/parallel/'):
+        print("Calculating time steps from *.h5 files")
+        return len(glob.glob(path+'/parallel/*.h5'))

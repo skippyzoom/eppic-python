@@ -1,38 +1,28 @@
 #!/usr/bin/env python
 import h5py
 import numpy as np
-import os
+import os, sys
 from pathlib import Path
 # from matplotlib.pyplot import figure,show
 import matplotlib.pyplot as plt
-# try:
-#     from mayavi import mlab
-# except ImportError:
-#     print('Could not load Mayavi')
-#     mlab = None
+import importlib.machinery
 
+## Set the project directory and import variables
 baseDir = '/projectnb/eregion/may/Stampede_runs/'
 projDir = 'quasineutral_static_dust/run009/'
+# sys.path.append(baseDir+projDir)
+# from eppic import *
+eppic = importlib.machinery.SourceFileLoader('eppic',baseDir+projDir+'eppic.py').load_module()
 path = Path(baseDir+projDir+'parallel')
-nout = 32
+# nout = 32
 timestep = [256,512]
 # fileName = ['parallel'] * len(timestep)
 # for ts in range(len(timestep)):
 #     fileName[ts] += '{:06d}'.format(timestep[ts])+'.h5'
 # dataPath = path/fileName[0]
 
-# # This will overwrite den each time...
-# den = []
-# for ts in range(len(timestep)):
-#     fileName = 'parallel{:06d}'.format(nout*timestep[ts])+'.h5'
-#     print("Reading",fileName)
-#     with h5py.File(path/fileName,'r') as f:
-#         # den = np.rot90(f['/den1'][:,512-256:512+255],3)
-#         den.append(np.rot90(f['/den1'][:,512-256:512+256],3))
-# This will overwrite den each time...
 den = []
 for ts in range(len(timestep)):
-    # fileName = 'parallel{:06d}'.format(nout*timestep[ts])+'.h5'
     stepName = 'parallel{:06d}'.format(nout*timestep[ts])
     fileName = stepName+'.h5'
     plotName = stepName+'.pdf'
