@@ -34,8 +34,10 @@ def calc_timesteps(path='./'):
 
     import os, glob
 
-    fn_list = [path+'/moments1.out', path+'/moments0.out']
-    fn_list.extend([path+'/domain000/moments1.out', path+'/domain000/moments0.out'])
+    fn_list = [os.path.join(path,'moments1.out'),
+               os.path.join(path,'moments0.out'),
+               os.path.join(path,'domain000','moments1.out'),
+               os.path.join(path,'domain000','moments0.out')]
     for i,fn in enumerate(fn_list):
         if os.path.exists(fn):
             with open(fn) as f:
