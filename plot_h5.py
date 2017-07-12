@@ -31,6 +31,9 @@ ntMax = eppic_io.calc_timesteps(path)
 timeStep = [1,ntMax-1]
 
 ## Loop over time steps and plot
+cmap = plt.get_cmap(colorMap)
+vmin = -0.06
+vmax = 0.06
 for ts in range(len(timeStep)):
     strStep = '{:06d}'.format(eppic.nout*timeStep[ts])
     fileName = 'parallel'+strStep+'.h5'
@@ -39,7 +42,7 @@ for ts in range(len(timeStep)):
     with h5py.File(path+'parallel/'+fileName,'r') as f:
         data = np.rot90(f['/'+dataName][int(x0):int(xf),int(y0):int(yf)],3)
     print("Plotting",plotName)
-    plt.pcolormesh(data,cmap=colorMap)
+    plt.pcolormesh(data,cmap=cmap,vmin=vmin,vmax=vmax)
     plt.colorbar()
     plt.savefig(path+plotName)
     plt.close()
