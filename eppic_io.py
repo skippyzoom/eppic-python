@@ -46,3 +46,6 @@ def calc_timesteps(path='./'):
     if os.path.exists(path+'/parallel/'):
         print("Calculating time steps from *.h5 files")
         return len(glob.glob(path+'/parallel/*.h5'))
+
+# def set_default(default):
+#     """Set a variable to a default value if the variable is undefined."""
