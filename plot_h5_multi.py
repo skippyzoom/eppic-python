@@ -8,8 +8,10 @@ import importlib.machinery
 import eppic_io
 
 ## Declare quantity to plot
-dataName = 'phi'
-colorMap = 'seismic'
+# dataName = 'phi'
+# colorMap = 'seismic'
+dataName = 'den1'
+colorMap = 'plasma'
 plotType = 'png'
 
 ## Set the project directory and import variables
@@ -65,22 +67,77 @@ nZ = int(eppic.nz/eppic.nout_avg)
 nT = len(timeStep)
 # data = np.zeros((nX,nY,nZ,nT))
 data = np.zeros((nX,nY,nT),order='F')
-print(data.shape)
+strStep = []
+# print(data.shape)
 for it,ts in enumerate(timeStep):
-    strStep = '{:06d}'.format(eppic.nout*ts)
-    fileName = 'parallel'+strStep+'.h5'
+    # strStep = '{:06d}'.format(eppic.nout*ts)
+    strStep.append('{:06d}'.format(eppic.nout*ts))
+    fileName = 'parallel'+strStep[it]+'.h5'
     print("Reading",fileName)
     with h5py.File(path+'parallel/'+fileName,'r') as f:
         temp = np.array(f['/'+dataName])
-        print(temp.shape)
+        # print(temp.shape)
         # temp = np.rot90(temp,3)
         # print(temp.shape)
         # data[:,:,:,it] = temp.reshape(nX,nY,nZ)
         data[:,:,it] = temp
 
-plt.pcolormesh(np.transpose(data[x0:xf,y0:yf,1]))
-plt.xlim(x0, xf)
-plt.ylim(y0, yf)
-plt.gca().set_aspect('equal', adjustable='box')
+xg = np.linspace(x0,xf,data[x0:xf,y0:yf,0].shape[0])
+yg = np.linspace(y0,yf,data[x0:xf,y0:yf,0].shape[1])
+
+# plt.pcolormesh(np.transpose(data[x0:xf,y0:yf,1]))
+# plt.xlim(x0, xf)
+# plt.ylim(y0, yf)
+# plt.gca().set_aspect('equal', adjustable='box')
+# plt.show()
+
+# f, axarr = plt.subplots(2)
+# axarr[0].pcolormesh(data[x0:xf,y0:yf,0])
+# axarr[0].set_title(strStep[0])
+# axarr[1].pcolormesh(data[x0:xf,y0:yf,1])
+# axarr[1].set_title(strStep[1])
+# # f.subplots_adjust(hspace=0.3)
+# plt.show()
+
+# plt.subplot(2,1,1)
+# plt.pcolormesh(xg,yg,data[x0:xf,y0:yf,0])
+# plt.axis([x0,xf,y0,yf])
+# plt.subplot(2,1,2)
+# plt.pcolormesh(xg,yg,data[x0:xf,y0:yf,1])
+# plt.axis([x0,xf,y0,yf])
+# plt.show()
+
+dataMaxAbs = np.nanmax(np.absolute(data))
+# vmin = data.min()
+# vmax = data.max()
+vmin = -dataMaxAbs
+vmax = dataMaxAbs
+print(vmin,vmax)
+cmap = plt.get_cmap(colorMap)
+fig, axes = plt.subplots(2, sharex=True)
+img = axes[0].pcolormesh(xg,yg,data[x0:xf,y0:yf,0],
+                         cmap=cmap,vmin=vmin,vmax=vmax)
+axes[0].set_title(strStep[0])
+img = axes[1].pcolormesh(xg,yg,data[x0:xf,y0:yf,1],
+                         cmap=cmap,vmin=vmin,vmax=vmax)
+axes[1].set_title(strStep[1])
+fig.suptitle('Density')
+# fig.text(0.50, 0.95, 'Density', transform=fig.transFigure, horizontalalignment='center')
+fig.subplots_adjust(right=0.80)
+cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.70])
+fig.colorbar(img,cax=cbar_ax)
 plt.show()
+
+# ## The following requires from matplotlib.pyplot import figure, show
+# xg = np.linspace(x0,xf,data[:,:,0].shape[0])
+# yg = np.linspace(y0,yf,data[:,:,0].shape[1])
+# fg = figure()
+# ax = fg.gca()
+# pc = ax.pcolormesh(xg,yg,data[:,:,1])
+# ax.set_xlabel('x [m]')
+# ax.set_ylabel('z [m]')
+# ax.set_title('Density')
+# fg.colorbar(pc).set_label('$\delta n/n_0$')
+
+
 print("\n")
