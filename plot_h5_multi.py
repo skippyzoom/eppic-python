@@ -17,10 +17,11 @@ plotName = dataName+'.'+plotType
 
 ## Set the project directory and import variables
 baseDir = '/projectnb/eregion/may/Stampede_runs/'
-projDir = 'quasineutral_static_dust/run009/'
-path = baseDir+projDir
+# projDir = 'quasineutral_static_dust/run009/'
+projDir = 'parametric_wave/run000'
+path = os.path.join(baseDir,projDir)
 posixPath = Path(path)
-eppic = importlib.machinery.SourceFileLoader('eppic',path+'eppic.py').load_module()
+eppic = importlib.machinery.SourceFileLoader('eppic',os.path.join(path,'eppic.py')).load_module()
 
 ## Set default parameters
 ## -->This could get bloated if there are a lot of variables to check
