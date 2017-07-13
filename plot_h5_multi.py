@@ -13,6 +13,7 @@ import eppic_io
 dataName = 'den1'
 colorMap = 'plasma'
 plotType = 'png'
+plotName = dataName+'.'+plotType
 
 ## Set the project directory and import variables
 baseDir = '/projectnb/eregion/may/Stampede_runs/'
@@ -22,11 +23,7 @@ posixPath = Path(path)
 eppic = importlib.machinery.SourceFileLoader('eppic',path+'eppic.py').load_module()
 
 ## Set default parameters
-## -->This could get bloated if there are a lot
-# try:
-#     eppic.nz
-# except AttributeError:
-#     setattr(eppic, 'nz', 1)
+## -->This could get bloated if there are a lot of variables to check
 if hasattr(eppic, 'nz'):
     pass
 else:
@@ -48,24 +45,18 @@ nX = int(eppic.nx*eppic.nsubdomains/eppic.nout_avg)
 nY = int(eppic.ny/eppic.nout_avg)
 nZ = int(eppic.nz/eppic.nout_avg)
 nT = len(timeStep)
-# data = np.zeros((nX,nY,nZ,nT))
 data = np.zeros((nX,nY,nT),order='F')
 strStep = []
-# print(data.shape)
 for it,ts in enumerate(timeStep):
-    # strStep = '{:06d}'.format(eppic.nout*ts)
     strStep.append('{:06d}'.format(eppic.nout*ts))
     fileName = 'parallel'+strStep[it]+'.h5'
     print("Reading",fileName)
-    with h5py.File(path+'parallel/'+fileName,'r') as f:
+    with h5py.File(os.path.join(path,'parallel',fileName),'r') as f:
         temp = np.array(f['/'+dataName])
-        # temp = np.transpose(temp)
         data[:,:,it] = temp
 
 xg = np.linspace(x0,xf,data[x0:xf,y0:yf,0].shape[0])
 yg = np.linspace(y0,yf,data[x0:xf,y0:yf,0].shape[1])
-# print(data[x0:xf,y0:yf,0].shape[0])
-# print(data[x0:xf,y0:yf,0].shape[1])
 
 dataMaxAbs = np.nanmax(np.absolute(data))
 # vmin = data.nanmin()
@@ -74,22 +65,33 @@ vmin = -dataMaxAbs
 vmax = dataMaxAbs
 # print(vmin,vmax)
 cmap = plt.get_cmap(colorMap)
+
 fig, axes = plt.subplots(2, sharex=True)
 img = axes[0].pcolormesh(xg,yg,
                          np.transpose(data[x0:xf,y0:yf,0]),
                          cmap=cmap,vmin=vmin,vmax=vmax)
 axes[0].set_title(strStep[0])
+axes[0].set_xlim(x0,xf)
+axes[0].set_ylim(y0,yf)
+# axes[0].set_aspect('equal','box-forced')
 axes[0].set_aspect('equal')
 img = axes[1].pcolormesh(xg,yg,
                          np.transpose(data[x0:xf,y0:yf,1]),
                          cmap=cmap,vmin=vmin,vmax=vmax)
 axes[1].set_title(strStep[1])
+axes[1].set_xlim(x0,xf)
+axes[1].set_ylim(y0,yf)
+# axes[1].set_aspect('equal','box-forced')
 axes[1].set_aspect('equal')
 fig.suptitle('Density')
 fig.subplots_adjust(right=0.80)
 cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.70])
 cbar = fig.colorbar(img,cax=cbar_ax)
 cbar.set_label('$\delta n/n_0$')
-plt.show()
+
+# plt.show()
+plotPath = os.path.join(path,plotName)
+print("Saving",plotPath)
+plt.savefig(plotPath)
 
 print("\n")
