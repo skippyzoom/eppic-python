@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # This file will contain I/O function for processing EPPIC data.
-
 def clean_params(path='./'):
     """Clean an EPPIC input file for python use.
 
