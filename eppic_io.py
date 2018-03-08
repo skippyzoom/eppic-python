@@ -1,13 +1,40 @@
 #!/usr/bin/env python
 # This file will contain I/O function for processing EPPIC data.
 
-def read_parameters(name='eppic.i',path='./',comment=';')
+def read_parameters(name='eppic.i',path='./',comment=';'):
     """Read a parameter input file from an EPPIC run.
 
     This function checks for a file named 'name' in 
     <path> and reads in all lines that do not begin
     with 'comment'.
     """
+
+    rfn = path+name
+    try:
+        rf = open(rfn,'r')
+    except OSError:
+        print("Cannot open",rfn,"for reading.")
+        return None
+    params = dict()
+    for line in rf:
+        okay = line.strip(' \t\n\r')
+        if okay:
+            if okay[0] == comment:
+                pass
+            else:
+                name,value = okay.split('=')
+                value = value.lstrip()
+                if ' ' in value:
+                    pass
+                elif '.' in value:
+                    value = float(value)
+                elif 'e' in value:
+                    value = float(value)
+                else:
+                    value = int(value)
+                params[name.strip()] = value
+    return params
+    rf.close()
 
 def clean_params(path='./'):
     """Clean an EPPIC input file for python use.
@@ -25,7 +52,10 @@ def clean_params(path='./'):
     except OSError:
         print("Cannot open",rfn,"for reading.")
         return None
-    wf = open(wfn,'w')
+    try:
+        wf = open(wfn,'w') 
+    except OSError:
+       print("Cannot open",wfn,"for writing.")
     for line in rf:
         cleaned = line.strip(' \t\n\r')
         if cleaned:

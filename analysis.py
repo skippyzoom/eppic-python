@@ -19,16 +19,21 @@ plotPath = 'python_images'
 plotType = 'pdf'
 plotName = dataName+'.'+plotType
 
-## Choose time steps to plot
-ntMax = eppic_io.calc_timesteps(path)
-timeStep = [1,ntMax-1]
-
 ## Set up standard path info
 homePath = os.path.expanduser('~')
 basePath = 'Documents/BU/research/Projects'
-# fileName = 'parallel004992.h5'
+fileName = 'parallel004992.h5'
 dataFile = os.path.join(homePath,basePath,projPath,dataPath,
                         'parallel',fileName)
+wd = os.path.join(homePath,basePath,projPath,dataPath)
+
+## Choose time steps to plot
+ntMax = eppic_io.calc_timesteps(path=wd)
+timeStep = [1,ntMax-1]
+
+## Read parameter file
+params = eppic_io.read_parameters(path=wd)
+pdb.set_trace()
 
 print("Reading data...")
 with h5py.File(dataFile,'r') as f:
