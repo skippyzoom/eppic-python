@@ -2,24 +2,33 @@
 import os
 import h5py
 import numpy as np
-# from pathlib import Path
-# from scipy.interpolate import interp2d
-# from matplotlib.pyplot import figure, show
 import matplotlib.pyplot as plt
 import pdb
+import eppic_io
 
-## It appears that pathlib.Path doesn't work with h5py.File()
-# basePath = Path(os.path.expanduser('~')+
-#                '/Documents/BU/research/Projects')
-# dataPath = 'parametric_wave/run005/data/eppic/parallel'
-# fileName = 'parallel004992.h5'
-# dataFile = basePath/dataPath/fileName
+## Declare project path
+projPath = 'parametric_wave/run005/'
 
+## Declare data name and directory
+dataName = 'den1'
+dataPath = 'data/eppic/'
+
+## Declare plotting preferences
+cmap = 'plasma'
+plotPath = 'python_images'
+plotType = 'pdf'
+plotName = dataName+'.'+plotType
+
+## Choose time steps to plot
+ntMax = eppic_io.calc_timesteps(path)
+timeStep = [1,ntMax-1]
+
+## Set up standard path info
 homePath = os.path.expanduser('~')
 basePath = 'Documents/BU/research/Projects'
-dataPath = 'parametric_wave/run005/data/eppic/parallel'
-fileName = 'parallel004992.h5'
-dataFile = os.path.join(homePath,basePath,dataPath,fileName)
+# fileName = 'parallel004992.h5'
+dataFile = os.path.join(homePath,basePath,projPath,dataPath,
+                        'parallel',fileName)
 
 print("Reading data...")
 with h5py.File(dataFile,'r') as f:
@@ -27,23 +36,12 @@ with h5py.File(dataFile,'r') as f:
 print("Done")
 
 print("Creating image...")
-# fg = figure()
-# ax = fg.gca()
-# p = ax.pcolormesh(den)
-# ax.set_xlabel('x [m]')
-# ax.set_ylabel('y [m]')
-# ax.set_title('Relative Perturbed Density')
-# fg.colorbar(p).set_label('$\delta n/n_0$')
-# fg.savefig('den_test.pdf')
-
-# fg, ax = plt.subplots(nrows=1)
-# pc = ax.pcolormesh(den)
-# plt.show()
 
 plt.pcolormesh(den, rasterized=True)
-# plt.colorbar()
 print("Done")
 
 print("Saving image...")
-plt.savefig('den_test.pdf')
+savePath = os.path.join(homePath,basePath,projPath,plotPath,
+                        plotPath,plotName)
+plt.savefig(savePath)
 print("Done")

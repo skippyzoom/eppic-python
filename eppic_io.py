@@ -1,6 +1,14 @@
 #!/usr/bin/env python
 # This file will contain I/O function for processing EPPIC data.
 
+def read_parameters(name='eppic.i',path='./',comment=';')
+    """Read a parameter input file from an EPPIC run.
+
+    This function checks for a file named 'name' in 
+    <path> and reads in all lines that do not begin
+    with 'comment'.
+    """
+
 def clean_params(path='./'):
     """Clean an EPPIC input file for python use.
 
