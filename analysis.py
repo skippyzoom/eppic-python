@@ -3,7 +3,7 @@ import os
 import h5py
 import numpy as np
 import matplotlib.pyplot as plt
-# from matplotlib.pyplot import figure,draw
+import matplotlib.patches as pat
 import pdb
 import eppic_io
 
@@ -30,6 +30,7 @@ wd = os.path.join(homePath,basePath,projPath,dataPath)
 savePath = os.path.join(homePath,basePath,projPath,plotPath,plotName)
 
 ##==Read parameter file
+#-->Write an eppic_io function to set default values
 print("Reading parameter file...")
 params = eppic_io.read_parameters(path=wd)
 print("Done")
@@ -94,6 +95,7 @@ grid = plt.GridSpec(2,2, wspace=0.4, hspace=0.3)
 main = fig.add_subplot(grid[0,0:])
 botL = fig.add_subplot(grid[1,:1])
 botR = fig.add_subplot(grid[1,1:])
+
 im = main.pcolormesh(xg[x0:xf],yg[y0:yf],
                      den[x0:xf,y0:yf].T,
                      vmin=vmin,vmax=vmax,
@@ -107,6 +109,17 @@ fig.suptitle('Density')
 fig.subplots_adjust(right=0.80)
 cbar_ax = fig.add_axes([0.85,0.15,0.05,0.70])
 fig.colorbar(im,cax=cbar_ax).set_label('$\delta n/n0$')
+main.add_patch(
+    pat.Rectangle(
+        (plane['dx']*x0Lz,plane['dy']*y0Lz),
+        zWidth,zWidth,
+        fill=False,linewidth=1,edgecolor='white'))
+main.add_patch(
+    pat.Rectangle(
+        (plane['dx']*x0Rz,plane['dy']*y0Rz),
+        zWidth,zWidth,
+        fill=False,linewidth=1,edgecolor='white'))
+
 Lz = botL.pcolormesh(xg[x0Lz:xfLz],yg[y0Lz:yfLz],
                      den[x0Lz:xfLz,y0Lz:yfLz].T,
                      vmin=vmin,vmax=vmax,
@@ -116,6 +129,7 @@ botL.set_ylabel('Vertical [m]')
 botL.set_xticks(plane['dx']*np.linspace(x0Lz,xfLz,5))
 botL.set_yticks(plane['dy']*np.linspace(y0Lz,yfLz,5))
 botL.set_aspect('equal')
+
 Rz = botR.pcolormesh(xg[x0Rz:xfRz],yg[y0Rz:yfRz],
                      den[x0Rz:xfRz,y0Rz:yfRz].T,
                      vmin=vmin,vmax=vmax,
@@ -131,6 +145,6 @@ print("Done")
 ##==Save image
 print("Saving",savePath,"...")
 savePath = os.path.join(savePath)
-plt.savefig(savePath,bbox_inches='tight')
+plt.savefig(savePath,bbox_inches='tight',dpi=400)
 
 print("Done")
