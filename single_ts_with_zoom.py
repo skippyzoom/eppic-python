@@ -21,7 +21,8 @@ plotName = dataName+'.'+plotType
 
 ##==Set up standard path info
 homePath = os.path.expanduser('~')
-basePath = 'Research'
+# basePath = 'Research'
+basePath = 'Documents/BU/research/Projects'
 fileName = 'parallel004992.h5'
 dataFile = os.path.join(homePath,basePath,projPath,dataPath,
                         'parallel',fileName)
@@ -72,7 +73,7 @@ y0Rz = y0Lz
 yfRz = yfLz
 
 ##==Read data file
-print("Reading"+dataName+"...")
+print("Reading "+dataName+"...")
 with h5py.File(dataFile,'r') as f:
     data = f['/'+dataName][:]
 print("Done")
