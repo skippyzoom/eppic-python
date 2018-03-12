@@ -12,7 +12,7 @@ projPath = 'parametric_wave/run005/'
 
 ##==Declare data name and directory
 dataName = 'phi'
-dataPath = 'data/eppic/'
+dataPath = ''
 
 ##==Declare plotting preferences
 plotPath = 'python_images'
@@ -20,9 +20,11 @@ plotType = 'pdf'
 plotName = dataName+'.'+plotType
 
 ##==Set up standard path info
-homePath = os.path.expanduser('~')
+# homePath = os.path.expanduser('~')
+homePath = '/projectnb/eregion/may/'
 # basePath = 'Research'
-basePath = 'Documents/BU/research/Projects'
+# basePath = 'Documents/BU/research/Projects'
+basePath = 'Stampede_runs'
 # fileName = 'parallel004992.h5'
 # fileName = 'parallel000000.h5'
 # dataFile = os.path.join(homePath,basePath,projPath,dataPath,
@@ -90,8 +92,8 @@ yg = plane['dy']*np.linspace(y0,yf,yf-y0)
 
 ##==Calculate gradient: E = -Grad[phi]
 print("Calculating field components...")
-Fx = np.zeros(data.shape)
-Fy = np.zeros(data.shape)
+Fx = np.zeros_like(data)
+Fy = np.zeros_like(data)
 for it in timeStep:
     tmp = np.gradient(data[:,:,it])
     Fx[:,:,it] = -tmp[0]
@@ -103,6 +105,34 @@ Fr = np.sqrt(Fx*Fx + Fy*Fy)
 print("Calculating field direction...")
 Ft = np.arctan2(Fy,Fx)
 
+##==Calculate FFT
+print("Calculating FFT of field magnitude...")
+# pdb.set_trace()
+Fr_fft = np.zeros((Fr.shape[0],
+                   Fr.shape[1]//2 + 1,
+                   Fr.shape[2]))
+for it in timeStep:
+    # tmp = Fr[:,:,it]
+    # Fr_fft[:,:,it] = 20*np.log10(np.fft.rfft2(tmp))
+    tmp = np.fft.rfft2(Fr[:,:,it])
+    tmp /= np.max(tmp)
+    Fr_fft[:,:,it] = 10*np.log10(tmp*tmp)
+# Fr_fft = 20*np.log10(Fr_fft)
+# pdb.set_trace()
+
+print("Creating image...")
+image = Fr_fft[:,:,ntMax-1]
+maxAbs = np.nanmax(abs(image))
+vmin = np.nanmin(image)
+vmax = np.nanmax(image)
+plt.pcolormesh(image.T,cmap='Spectral',vmin=vmin,vmax=vmax,rasterized=True)
+plt.colorbar()
+print("Done")
+savePath = os.path.join(homePath,basePath,projPath,plotPath,'Er_fft-TEST.pdf')
+print("Saving",savePath,"...")
+plt.savefig(savePath,bbox_inches='tight',dpi=400)
+print("Done")
+
 if 0:
     print("Creating plot...")
     plt.plot(xg,Fx[:,plane['ny']//2])
@@ -112,16 +142,17 @@ if 0:
     plt.savefig(savePath,bbox_inches='tight',dpi=400)
     print("Done")
 
-# print("Creating image...")
-# maxAbs = np.nanmax(abs(Fy))
-# vmin = -maxAbs
-# vmax = +maxAbs
-# plt.pcolormesh(Fy.T,cmap='seismic',vmin=vmin,vmax=vmax,rasterized=True)
-# plt.colorbar()
-# print("Done")
-# savePath = os.path.join(homePath,basePath,projPath,plotPath,'Ey-TEST.pdf')
-# print("Saving",savePath,"...")
-# plt.savefig(savePath,bbox_inches='tight',dpi=400)
-# print("Done")
+if 0:
+    print("Creating image...")
+    maxAbs = np.nanmax(abs(Fy))
+    vmin = -maxAbs
+    vmax = +maxAbs
+    plt.pcolormesh(Fy.T,cmap='seismic',vmin=vmin,vmax=vmax,rasterized=True)
+    plt.colorbar()
+    print("Done")
+    savePath = os.path.join(homePath,basePath,projPath,plotPath,'Ey-TEST.pdf')
+    print("Saving",savePath,"...")
+    plt.savefig(savePath,bbox_inches='tight',dpi=400)
+    print("Done")
 
 # pdb.set_trace()
