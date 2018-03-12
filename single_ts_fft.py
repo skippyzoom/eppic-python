@@ -105,7 +105,6 @@ vmin = np.nanmin(image)
 vmax = np.nanmax(image)
 plt.pcolormesh(image.T,cmap='Spectral',vmin=vmin,vmax=vmax,rasterized=True)
 plt.colorbar()
-plt.set_aspect('equal')
 print("Done")
 savePath = os.path.join(homePath,basePath,projPath,plotPath,
                         dataName+'_fft-TEST.pdf')
