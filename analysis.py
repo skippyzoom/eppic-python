@@ -15,19 +15,24 @@ dataName = 'den1'
 dataPath = 'data/eppic/'
 
 ##==Declare plotting preferences
-cmap = 'plasma'
 plotPath = 'python_images'
 plotType = 'pdf'
 plotName = dataName+'.'+plotType
 
 ##==Set up standard path info
 homePath = os.path.expanduser('~')
-basePath = 'Documents/BU/research/Projects'
+basePath = 'Research'
 fileName = 'parallel004992.h5'
 dataFile = os.path.join(homePath,basePath,projPath,dataPath,
                         'parallel',fileName)
 wd = os.path.join(homePath,basePath,projPath,dataPath)
 savePath = os.path.join(homePath,basePath,projPath,plotPath,plotName)
+
+##==Make the image directory, if necessary
+try:
+    os.mkdir(os.path.join(homePath,basePath,projPath,plotPath))
+except OSError:
+    pass
 
 ##==Read parameter file
 #-->Write an eppic_io function to set default values
@@ -87,8 +92,10 @@ yg = params['dy']*np.linspace(y0,yf,yf-y0)
 maxAbs = np.nanmax(abs(den))
 vmin = -maxAbs
 vmax = +maxAbs
-
+#pdb.set_trace()
 ##==Create image
+rasterized = True
+cmap = 'PiYG'
 print("Creating image...")
 fig = plt.figure()
 grid = plt.GridSpec(2,2, wspace=0.4, hspace=0.3)
@@ -99,7 +106,10 @@ botR = fig.add_subplot(grid[1,1:])
 im = main.pcolormesh(xg[x0:xf],yg[y0:yf],
                      den[x0:xf,y0:yf].T,
                      vmin=vmin,vmax=vmax,
-                     rasterized=True)
+                     cmap=cmap, 
+                     rasterized=rasterized)
+main.set_xlim(plane['dx']*x0,plane['dx']*xf)
+main.set_ylim(plane['dy']*y0,plane['dy']*yf)
 main.set_xlabel('Zonal [m]')
 main.set_ylabel('Vertical [m]')
 main.set_xticks(plane['dx']*np.linspace(x0,xf,5))
@@ -123,7 +133,10 @@ main.add_patch(
 Lz = botL.pcolormesh(xg[x0Lz:xfLz],yg[y0Lz:yfLz],
                      den[x0Lz:xfLz,y0Lz:yfLz].T,
                      vmin=vmin,vmax=vmax,
-                     rasterized=True)
+                     cmap=cmap, 
+                     rasterized=rasterized)
+botL.set_xlim(plane['dx']*x0Lz,plane['dx']*xfLz)
+botL.set_ylim(plane['dy']*y0Lz,plane['dy']*yfLz)
 botL.set_xlabel('Zonal [m]')
 botL.set_ylabel('Vertical [m]')
 botL.set_xticks(plane['dx']*np.linspace(x0Lz,xfLz,5))
@@ -133,7 +146,10 @@ botL.set_aspect('equal')
 Rz = botR.pcolormesh(xg[x0Rz:xfRz],yg[y0Rz:yfRz],
                      den[x0Rz:xfRz,y0Rz:yfRz].T,
                      vmin=vmin,vmax=vmax,
-                     rasterized=True)
+                     cmap=cmap, 
+                     rasterized=rasterized)
+botR.set_xlim(plane['dx']*x0Rz,plane['dx']*xfRz)
+botR.set_ylim(plane['dy']*y0Rz,plane['dy']*yfRz)
 botR.set_xlabel('Zonal [m]')
 botR.set_ylabel('Vertical [m]')
 botR.set_xticks(plane['dx']*np.linspace(x0Rz,xfRz,5))
