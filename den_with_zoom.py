@@ -74,7 +74,7 @@ yfRz = yfLz
 ##==Read data file
 print("Reading data...")
 with h5py.File(dataFile,'r') as f:
-    den = f['/den1'][:]
+    den = f['/'+dataName][:]
 print("Done")
 
 ##==Adjust data
