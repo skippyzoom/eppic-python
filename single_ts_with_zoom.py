@@ -72,15 +72,15 @@ y0Rz = y0Lz
 yfRz = yfLz
 
 ##==Read data file
-print("Reading data...")
+print("Reading"+dataName+"...")
 with h5py.File(dataFile,'r') as f:
-    den = f['/'+dataName][:]
+    data = f['/'+dataName][:]
 print("Done")
 
 ##==Adjust data
-# den = np.flipud(den)
-den = np.rot90(den,k=3)
-den = den[x0:xf,y0:yf]
+# data = np.flipud(data)
+data = np.rot90(data,k=3)
+data = data[x0:xf,y0:yf]
 
 ##==Create axis vectors
 xg = params['dx']*np.linspace(x0,xf,xf-x0)
@@ -89,7 +89,7 @@ yg = params['dy']*np.linspace(y0,yf,yf-y0)
 ##==Set data limits
 #-->Write a function to create a dict of graphics
 #   preferences, given the name of a data quantity?
-maxAbs = np.nanmax(abs(den))
+maxAbs = np.nanmax(abs(data))
 vmin = -maxAbs
 vmax = +maxAbs
 #pdb.set_trace()
@@ -104,7 +104,7 @@ botL = fig.add_subplot(grid[1,:1])
 botR = fig.add_subplot(grid[1,1:])
 
 im = main.pcolormesh(xg[x0:xf],yg[y0:yf],
-                     den[x0:xf,y0:yf].T,
+                     data[x0:xf,y0:yf].T,
                      vmin=vmin,vmax=vmax,
                      cmap=cmap, 
                      rasterized=rasterized)
@@ -131,7 +131,7 @@ main.add_patch(
         fill=False,linewidth=1,edgecolor='white'))
 
 Lz = botL.pcolormesh(xg[x0Lz:xfLz],yg[y0Lz:yfLz],
-                     den[x0Lz:xfLz,y0Lz:yfLz].T,
+                     data[x0Lz:xfLz,y0Lz:yfLz].T,
                      vmin=vmin,vmax=vmax,
                      cmap=cmap, 
                      rasterized=rasterized)
@@ -144,7 +144,7 @@ botL.set_yticks(plane['dy']*np.linspace(y0Lz,yfLz,5))
 botL.set_aspect('equal')
 
 Rz = botR.pcolormesh(xg[x0Rz:xfRz],yg[y0Rz:yfRz],
-                     den[x0Rz:xfRz,y0Rz:yfRz].T,
+                     data[x0Rz:xfRz,y0Rz:yfRz].T,
                      vmin=vmin,vmax=vmax,
                      cmap=cmap, 
                      rasterized=rasterized)
