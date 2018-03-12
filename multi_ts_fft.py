@@ -12,7 +12,7 @@ projPath = 'parametric_wave/run005/'
 
 ##==Declare data name and directory
 dataName = 'den1'
-dataPath = ''
+dataPath = 'data/eppic/'
 
 ##==Declare plotting preferences
 plotPath = 'python_images'
@@ -20,11 +20,11 @@ plotType = 'pdf'
 plotName = dataName+'.'+plotType
 
 ##==Set up standard path info
-# homePath = os.path.expanduser('~')
-homePath = '/projectnb/eregion/may/'
+homePath = os.path.expanduser('~')
+# homePath = '/projectnb/eregion/may/'
 # basePath = 'Research'
-# basePath = 'Documents/BU/research/Projects'
-basePath = 'Stampede_runs'
+basePath = 'Documents/BU/research/Projects'
+# basePath = 'Stampede_runs'
 # fileName = 'parallel004992.h5'
 # fileName = 'parallel000000.h5'
 # dataFile = os.path.join(homePath,basePath,projPath,dataPath,
@@ -44,8 +44,8 @@ params = eppic_io.read_parameters(path=wd)
 
 ##==Choose time steps to plot
 ntMax = eppic_io.calc_timesteps(path=wd)
-# timeStep = [1,ntMax-1]
-timeStep = np.arange(ntMax)
+timeStep = [1,ntMax-1]
+# timeStep = np.arange(ntMax)
 
 ##==Set up image plane
 plane = {'nx':
@@ -82,30 +82,38 @@ for it,ts in enumerate(timeStep):
 
 ##==Calculate FFT
 print("Calculating FFT of "+dataName+"...")
-# pdb.set_trace()
-# data_fft = np.zeros((data.shape[0],
-#                      data.shape[1]//2 + 1,
-#                      data.shape[2]))
 maxDim = np.max([data.shape[0],data.shape[1]])
 tmp = np.fft.rfft2(data[:,:,0],s=[maxDim,maxDim])
-# pdb.set_trace()
-data_fft = np.zeros((tmp.shape[0],
-                    tmp.shape[1],
-                    data.shape[2]))
-for it in timeStep:
+fnx = tmp.shape[0]
+fny = tmp.shape[1]
+fnt = data.shape[2]
+data_fft = np.zeros((fnx,fny,fnt))
+dcw = 4
+for it in np.arange(len(timeStep)):
     tmp = np.fft.rfft2(data[:,:,it],s=[maxDim,maxDim])
-    tmp = np.fft.fftshift(tmp)
-    tmp /= np.max(tmp)
-    data_fft[:,:,it] = 10*np.log10(tmp*tmp)
+    tmp = tmp.real
+    tmp = np.fft.fftshift(tmp,axes=0)
+    tmp[fnx//2-dcw:fnx//2+dcw,:] = np.float64(1e-6)
+    test = tmp[fnx//2-dcw:fnx//2+dcw,:]
+    tmp /= np.nanmax(tmp)
+    data_fft[:,:,it] = 10*np.log10(np.square(tmp))
+    tmp = None
 
 print("Creating image...")
-image = data_fft[:,:,ntMax-1]
-maxAbs = np.nanmax(abs(image))
-vmin = np.nanmin(image)
-vmax = np.nanmax(image)
-plt.pcolormesh(image.T,cmap='Spectral',vmin=vmin,vmax=vmax,rasterized=True)
-plt.colorbar()
-print("Done")
+image = data_fft[:,:,fnt-1]
+vmin = -30
+vmax = 0
+fig = plt.figure()
+ax = fig.gca()
+im = ax.pcolormesh(image.T,
+                   cmap='Spectral_r',
+                   vmin=vmin,vmax=vmax,
+                   rasterized=True)
+ax.set_aspect('equal')
+ax.set_position([0.10,0.10,0.70,0.35])
+cbar_ax = fig.add_axes([0.85,0.15,0.02,0.35])
+fig.colorbar(im,cax=cbar_ax).set_label('Spectral Power [dB]')
+
 savePath = os.path.join(homePath,basePath,projPath,plotPath,
                         dataName+'_fft-TEST.pdf')
 print("Saving",savePath,"...")
