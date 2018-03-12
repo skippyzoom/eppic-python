@@ -161,7 +161,6 @@ print("Done")
 
 ##==Save image
 print("Saving",savePath,"...")
-savePath = os.path.join(savePath)
 plt.savefig(savePath,bbox_inches='tight',dpi=400)
 
 print("Done")
