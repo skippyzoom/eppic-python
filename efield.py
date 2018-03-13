@@ -12,7 +12,7 @@ projPath = 'parametric_wave/run005/'
 
 ##==Declare data name and directory
 dataName = 'phi'
-dataPath = ''
+dataPath = 'data/eppic/'
 
 ##==Declare plotting preferences
 plotPath = 'python_images'
@@ -20,11 +20,11 @@ plotType = 'pdf'
 plotName = dataName+'.'+plotType
 
 ##==Set up standard path info
-# homePath = os.path.expanduser('~')
-homePath = '/projectnb/eregion/may/'
+homePath = os.path.expanduser('~')
+# homePath = '/projectnb/eregion/may/'
 # basePath = 'Research'
-# basePath = 'Documents/BU/research/Projects'
-basePath = 'Stampede_runs'
+basePath = 'Documents/BU/research/Projects'
+# basePath = 'Stampede_runs'
 # fileName = 'parallel004992.h5'
 # fileName = 'parallel000000.h5'
 # dataFile = os.path.join(homePath,basePath,projPath,dataPath,
@@ -44,8 +44,10 @@ params = eppic_io.read_parameters(path=wd)
 
 ##==Choose time steps to plot
 ntMax = eppic_io.calc_timesteps(path=wd)
+
+timeStep = np.arange(0,ntMax,ntMax//4)
 # timeStep = [1,ntMax-1]
-timeStep = np.arange(ntMax)
+# timeStep = np.arange(ntMax)
 
 ##==Set up image plane
 plane = {'nx':
@@ -94,7 +96,7 @@ yg = plane['dy']*np.linspace(y0,yf,yf-y0)
 print("Calculating field components...")
 Fx = np.zeros_like(data)
 Fy = np.zeros_like(data)
-for it in timeStep:
+for it in np.arange(len(timeStep)):
     tmp = np.gradient(data[:,:,it])
     Fx[:,:,it] = -tmp[0]
     Fy[:,:,it] = -tmp[1]
@@ -107,30 +109,43 @@ Ft = np.arctan2(Fy,Fx)
 
 ##==Calculate FFT
 print("Calculating FFT of field magnitude...")
-# pdb.set_trace()
-Fr_fft = np.zeros((Fr.shape[0],
-                   Fr.shape[1]//2 + 1,
-                   Fr.shape[2]))
-for it in timeStep:
-    # tmp = Fr[:,:,it]
-    # Fr_fft[:,:,it] = 20*np.log10(np.fft.rfft2(tmp))
-    tmp = np.fft.rfft2(Fr[:,:,it])
-    tmp /= np.max(tmp)
-    Fr_fft[:,:,it] = 10*np.log10(tmp*tmp)
-# Fr_fft = 20*np.log10(Fr_fft)
-# pdb.set_trace()
+maxDim = np.max([Fr.shape[0],Fr.shape[1]])
+tmp = np.fft.rfft2(Fr[:,:,0],s=[maxDim,maxDim])
+fnx = tmp.shape[0]
+fny = tmp.shape[1]
+fnt = Fr.shape[2]
+Fr_fft = np.zeros((fnx,fny,fnt))
+dcw = 4
+for it in np.arange(len(timeStep)):
+    tmp = np.fft.rfft2(Fr[:,:,it],s=[maxDim,maxDim])
+    tmp = tmp.real
+    tmp = np.fft.fftshift(tmp,axes=0)
+    tmp[fnx//2-dcw:fnx//2+dcw,:] = np.float64(1e-6)
+    test = tmp[fnx//2-dcw:fnx//2+dcw,:]
+    tmp /= np.nanmax(tmp)
+    Fr_fft[:,:,it] = 10*np.log10(np.square(tmp))
+    tmp = None
 
 print("Creating image...")
-image = Fr_fft[:,:,ntMax-1]
-maxAbs = np.nanmax(abs(image))
-vmin = np.nanmin(image)
-vmax = np.nanmax(image)
-plt.pcolormesh(image.T,cmap='Spectral',vmin=vmin,vmax=vmax,rasterized=True)
-plt.colorbar()
-print("Done")
-savePath = os.path.join(homePath,basePath,projPath,plotPath,'Er_fft-TEST.pdf')
-print("Saving",savePath,"...")
-plt.savefig(savePath,bbox_inches='tight',dpi=400)
+for it,ts in enumerate(timeStep):
+    image = Fr_fft[:,:,it]
+    vmin = -30
+    vmax = 0
+    fig = plt.figure()
+    ax = fig.gca()
+    im = ax.pcolormesh(image.T,
+                       cmap='Spectral_r',
+                       vmin=vmin,vmax=vmax,
+                       rasterized=True)
+    ax.set_aspect('equal')
+    ax.set_position([0.10,0.10,0.70,0.35])
+    cbar_ax = fig.add_axes([0.85,0.15,0.02,0.35])
+    fig.colorbar(im,cax=cbar_ax).set_label('Spectral Power [dB]')
+    savePath = os.path.join(homePath,basePath,projPath,plotPath,
+                            'Er_fft-'+strStep[it]+'.pdf')
+    print("Saving",savePath,"...")
+    plt.savefig(savePath,bbox_inches='tight',dpi=400)
+
 print("Done")
 
 if 0:
