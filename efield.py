@@ -14,6 +14,9 @@ projPath = 'parametric_wave/run005/'
 dataName = 'phi'
 dataPath = 'data/eppic/'
 
+##==Graphics options
+fft_images = False
+
 ##==Declare plotting preferences
 plotPath = 'python_images'
 plotType = 'pdf'
@@ -45,7 +48,7 @@ params = eppic_io.read_parameters(path=wd)
 ##==Choose time steps to plot
 ntMax = eppic_io.calc_timesteps(path=wd)
 
-timeStep = np.arange(0,ntMax,ntMax//4)
+timeStep = np.arange(1,ntMax,ntMax//4)
 # timeStep = [1,ntMax-1]
 # timeStep = np.arange(ntMax)
 
@@ -62,13 +65,11 @@ plane = {'nx':
 ##==Spatial range for full plot
 x0 = 0
 xf = plane['nx']
-y0 = plane['ny']//2
+y0 = 0
 yf = plane['ny']
 
 ##==Read HDF5 data
 print("Reading "+dataName+"...")
-# with h5py.File(dataFile,'r') as f:
-#     data = f['/'+dataName][:]
 data = np.zeros((xf-x0,yf-y0,len(timeStep)),
                 order='F')
 strStep = []
@@ -83,10 +84,6 @@ for it,ts in enumerate(timeStep):
         tmp = np.rot90(tmp,k=3)
         tmp = tmp[x0:xf,y0:yf]
         data[:,:,it] = tmp
-
-##==Adjust data
-# data = np.rot90(data,k=3)
-# data = data[x0:xf,y0:yf]
 
 ##==Create axis vectors
 xg = plane['dx']*np.linspace(x0,xf,xf-x0)
@@ -107,56 +104,62 @@ Fr = np.sqrt(Fx*Fx + Fy*Fy)
 print("Calculating field direction...")
 Ft = np.arctan2(Fy,Fx)
 
-##==Calculate FFT
-print("Calculating FFT of field magnitude...")
-maxDim = np.max([Fr.shape[0],Fr.shape[1]])
-tmp = np.fft.rfft2(Fr[:,:,0],s=[maxDim,maxDim])
-fnx = tmp.shape[0]
-fny = tmp.shape[1]
-fnt = Fr.shape[2]
-Fr_fft = np.zeros((fnx,fny,fnt))
-dcw = 4
+##==Create line plot of spatial mean
+# image = Fx[:,plane['ny']//2,:]
+image = np.mean(Fr,axis=1)
+print("Creating plot...")
 for it in np.arange(len(timeStep)):
-    tmp = np.fft.rfft2(Fr[:,:,it],s=[maxDim,maxDim])
-    tmp = tmp.real
-    tmp = np.fft.fftshift(tmp,axes=0)
-    tmp[fnx//2-dcw:fnx//2+dcw,:] = np.float64(1e-6)
-    test = tmp[fnx//2-dcw:fnx//2+dcw,:]
-    tmp /= np.nanmax(tmp)
-    Fr_fft[:,:,it] = 10*np.log10(np.square(tmp))
-    tmp = None
-
-print("Creating image...")
-for it,ts in enumerate(timeStep):
-    image = Fr_fft[:,:,it]
-    vmin = -30
-    vmax = 0
     fig = plt.figure()
     ax = fig.gca()
-    im = ax.pcolormesh(image.T,
-                       cmap='Spectral_r',
-                       vmin=vmin,vmax=vmax,
-                       rasterized=True)
-    ax.set_aspect('equal')
-    ax.set_position([0.10,0.10,0.70,0.35])
-    cbar_ax = fig.add_axes([0.85,0.15,0.02,0.35])
-    fig.colorbar(im,cax=cbar_ax).set_label('Spectral Power [dB]')
-    savePath = os.path.join(homePath,basePath,projPath,plotPath,
-                            'Er_fft-'+strStep[it]+'.pdf')
-    print("Saving",savePath,"...")
-    plt.savefig(savePath,bbox_inches='tight',dpi=400)
+    ax.plot(xg,image)
+    ax.set_ylim([-6e-3,+6e-3])
+    ax.set_xlabel('Zonal [m]')
+    ax.set_ylabel('$|E|$ [V/m]')
+savePath = os.path.join(homePath,basePath,projPath,plotPath,
+                        'Er_mean_multi.pdf')
+print("Saving",savePath,"...")
+plt.savefig(savePath,bbox_inches='tight',dpi=400)
+
+##==Calculate FFT
+if fft_images:
+    print("Calculating FFT of field magnitude...")
+    maxDim = np.max([Fr.shape[0],Fr.shape[1]])
+    tmp = np.fft.rfft2(Fr[:,:,0],s=[maxDim,maxDim])
+    fnx = tmp.shape[0]
+    fny = tmp.shape[1]
+    fnt = Fr.shape[2]
+    Fr_fft = np.zeros((fnx,fny,fnt))
+    dcw = 4
+    for it in np.arange(len(timeStep)):
+        tmp = np.fft.rfft2(Fr[:,:,it],s=[maxDim,maxDim])
+        tmp = tmp.real
+        tmp = np.fft.fftshift(tmp,axes=0)
+        tmp[fnx//2-dcw:fnx//2+dcw,:] = np.float64(1e-6)
+        test = tmp[fnx//2-dcw:fnx//2+dcw,:]
+        tmp /= np.nanmax(tmp)
+        Fr_fft[:,:,it] = 10*np.log10(np.square(tmp))
+        tmp = None
+    print("Creating images...")
+    for it in np.arange(len(timeStep)):
+        image = Fr_fft[:,:,it]
+        vmin = -30
+        vmax = 0
+        fig = plt.figure()
+        ax = fig.gca()
+        im = ax.pcolormesh(image.T,
+                           cmap='Spectral_r',
+                           vmin=vmin,vmax=vmax,
+                           rasterized=True)
+        ax.set_aspect('equal')
+        ax.set_position([0.10,0.10,0.70,0.35])
+        cbar_ax = fig.add_axes([0.85,0.15,0.02,0.35])
+        fig.colorbar(im,cax=cbar_ax).set_label('Spectral Power [dB]')
+        savePath = os.path.join(homePath,basePath,projPath,plotPath,
+                                'Er_fft-'+strStep[it]+'.pdf')
+        print("Saving",savePath,"...")
+        plt.savefig(savePath,bbox_inches='tight',dpi=400)
 
 print("Done")
-
-if 0:
-    print("Creating plot...")
-    plt.plot(xg,Fx[:,plane['ny']//2])
-    savePath = os.path.join(homePath,basePath,projPath,plotPath,
-                            'Ex_mid-TEST.pdf')
-    print("Saving",savePath,"...")
-    plt.savefig(savePath,bbox_inches='tight',dpi=400)
-    print("Done")
-
 if 0:
     print("Creating image...")
     maxAbs = np.nanmax(abs(Fy))
