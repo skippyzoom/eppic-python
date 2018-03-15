@@ -12,7 +12,8 @@ projPath = 'parametric_wave/run005/'
 
 ##==Declare data name and directory
 dataName = 'phi'
-dataPath = 'data/eppic/'
+# dataPath = 'data/eppic/'
+dataPath = ''
 
 ##==Declare plotting preferences
 plotPath = 'python_images'
@@ -20,15 +21,11 @@ plotType = 'pdf'
 plotName = dataName+'.'+plotType
 
 ##==Set up standard path info
-homePath = os.path.expanduser('~')
-# homePath = '/projectnb/eregion/may/'
+# homePath = os.path.expanduser('~')
+homePath = '/projectnb/eregion/may/'
 # basePath = 'Research'
-basePath = 'Documents/BU/research/Projects'
-# basePath = 'Stampede_runs'
-# fileName = 'parallel004992.h5'
-# fileName = 'parallel000000.h5'
-# dataFile = os.path.join(homePath,basePath,projPath,dataPath,
-#                         'parallel',fileName)
+# basePath = 'Documents/BU/research/Projects'
+basePath = 'Stampede_runs'
 wd = os.path.join(homePath,basePath,projPath,dataPath)
 
 ##==Make the image directory, if necessary
@@ -58,11 +55,14 @@ plane = {'nx':
          params['dx']}
 
 ##==Spatial range of data to extract
-pWidth = 64
-x0 = int(3*plane['nx']/4 - pWidth)
-xf = int(3*plane['nx']/4 + pWidth)
-y0 = int(plane['ny']/4 - pWidth)
-yf = int(plane['ny']/4 + pWidth)
+pxWidth = 64
+pyWidth = 64
+x0 = int(3*plane['nx']/4 - pxWidth)
+xf = int(3*plane['nx']/4 + pxWidth)
+# y0 = int(plane['ny']/4 - pyWidth)
+# yf = int(plane['ny']/4 + pyWidth)
+y0 = 0
+yf = plane['ny']
 
 ##==Read HDF5 data
 print("Reading "+dataName+"...")

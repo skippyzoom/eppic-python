@@ -13,12 +13,14 @@ projPath = 'parametric_wave/run005/'
 
 ##==Declare data name and directory
 dataName = 'phi'
-dataPath = 'data/eppic/'
+# dataPath = 'data/eppic/'
+dataPath = ''
 
 ##==Graphics options
+raw_images = True
 calc_fft = True
 calc_interp = False
-fft_images = False
+fft_images = True
 fft_filter = True
 plot_mean_y = False
 plot_mean_xy = True
@@ -33,15 +35,11 @@ plotType = 'pdf'
 plotName = dataName+'.'+plotType
 
 ##==Set up standard path info
-homePath = os.path.expanduser('~')
-# homePath = '/projectnb/eregion/may/'
+# homePath = os.path.expanduser('~')
+homePath = '/projectnb/eregion/may/'
 # basePath = 'Research'
-basePath = 'Documents/BU/research/Projects'
-# basePath = 'Stampede_runs'
-# fileName = 'parallel004992.h5'
-# fileName = 'parallel000000.h5'
-# dataFile = os.path.join(homePath,basePath,projPath,dataPath,
-#                         'parallel',fileName)
+# basePath = 'Documents/BU/research/Projects'
+basePath = 'Stampede_runs'
 wd = os.path.join(homePath,basePath,projPath,dataPath)
 
 ##==Make the image directory, if necessary
@@ -58,9 +56,9 @@ params = eppic_io.read_parameters(path=wd)
 ##==Choose time steps to plot
 ntMax = eppic_io.calc_timesteps(path=wd)
 
-# timeStep = np.arange(1,ntMax,ntMax//4)
+timeStep = np.arange(1,ntMax,ntMax//4)
 # timeStep = [1,ntMax-1]
-timeStep = np.arange(ntMax)
+# timeStep = np.arange(ntMax)
 nt = len(timeStep)
 
 ##==Set up image plane
@@ -115,33 +113,68 @@ Fr = np.sqrt(Fx*Fx + Fy*Fy)
 print("Calculating field direction...")
 Ft = np.arctan2(Fy,Fx)
 
+if raw_images:
+    print("Creating images...")
+    for it in np.arange(nt):
+        image = Fr[:,:,it]
+        vmin = 0
+        vmax = np.nanmax(Fr)
+        fig = plt.figure()
+        ax = fig.gca()
+        im = ax.pcolormesh(image.T,
+                           cmap='gist_heat',
+                           vmin=vmin,vmax=vmax,
+                           rasterized=True)
+        ax.set_aspect('equal')
+        ax.set_position([0.10,0.10,0.70,0.35])
+        cbar_ax = fig.add_axes([0.85,0.15,0.02,0.35])
+        fig.colorbar(im,cax=cbar_ax).set_label('|E| [V/m]')
+        savePath = os.path.join(homePath,basePath,projPath,plotPath,
+                                'Er-'+strStep[it]+'.pdf')
+        print("Saving",savePath,"...")
+        plt.savefig(savePath,bbox_inches='tight',dpi=400)
+
+
 ##==Calculate FFT
 if calc_fft:
     print("Calculating FFT of field magnitude...")
     maxDim = np.max([Fr.shape[0],Fr.shape[1]])
-    tmp = np.fft.rfft2(Fr[:,:,0],s=[maxDim,maxDim])
+    # tmp = np.fft.rfft2(Fr[:,:,0],s=[maxDim,maxDim])
+    # tmp = np.fft.rfft2(Fr[:,:,0])
+    tmp = np.fft.fft2(Fr[:,:,0])
     fnx = tmp.shape[0]
     fny = tmp.shape[1]
     fnt = Fr.shape[2]
-    Fr_fft = np.zeros((fnx,fny,fnt))
+    Fr_fft = np.zeros((fnx,fny,fnt),dtype='complex')
+    # Fr_fftdB = np.copy(Fr_fft).real
     dcw = 4
+    # for it in np.arange(fnt):
+    #     tmp = np.fft.rfft2(Fr[:,:,it],s=[maxDim,maxDim])
+    #     tmp = tmp.real
+    #     tmp = np.fft.fftshift(tmp,axes=0)
+    #     tmp[fnx//2-dcw:fnx//2+dcw,:] = np.float64(1e-6)
+    #     test = tmp[fnx//2-dcw:fnx//2+dcw,:]
+    #     tmp /= np.nanmax(tmp)
+    #     Fr_fftdB[:,:,it] = 10*np.log10(np.square(tmp))
+    #     tmp = None
+    # kx = np.fft.fftfreq(maxDim,plane['dx'])
+    # # kx = np.fft.fftshift(kx)
+    # ky = np.fft.rfftfreq(maxDim,plane['dy'])
     for it in np.arange(fnt):
-        tmp = np.fft.rfft2(Fr[:,:,it],s=[maxDim,maxDim])
-        tmp = tmp.real
-        tmp = np.fft.fftshift(tmp,axes=0)
-        tmp[fnx//2-dcw:fnx//2+dcw,:] = np.float64(1e-6)
-        test = tmp[fnx//2-dcw:fnx//2+dcw,:]
-        tmp /= np.nanmax(tmp)
-        Fr_fft[:,:,it] = 10*np.log10(np.square(tmp))
-        tmp = None
-    kx = np.fft.fftfreq(maxDim,plane['dx'])
-    kx = np.fft.fftshift(kx)
-    ky = np.fft.rfftfreq(maxDim,plane['dy'])
-
+        Fr_fft[:,:,it] = np.fft.fft2(Fr[:,:,it])
+    kx = np.fft.fftfreq(Fr_fft.shape[0],plane['dx'])
+    ky = np.fft.fftfreq(Fr_fft.shape[1],plane['dy'])
+    pdb.set_trace()
 if fft_images:
     print("Creating images...")
     for it in np.arange(nt):
+        # image = Fr_fftdB[:,:,it]
         image = Fr_fft[:,:,it]
+        image = image.real
+        image = np.fft.fftshift(image,axes=0)
+        image[fnx//2-dcw:fnx//2+dcw,:] = np.float64(1e-6)
+        image /= np.nanmax(image)
+        image = 10*np.log10(np.square(image))
         vmin = -30
         vmax = 0
         fig = plt.figure()
@@ -162,26 +195,65 @@ if fft_images:
 if fft_filter:
     print("Filtering FFT")
     lam = 10.0
-    tmpx = (np.where(np.fabs(kx) < 1/lam))[0]
-    tmpy = (np.where(np.fabs(ky) < 1/lam))[0]
-    Fr_fft[tmpx[0]:tmpx[len(tmpx)-1],
-           tmpy[0]:tmpy[len(tmpy)-1],:] = 0.0
+    # tmpx = (np.where(np.fabs(kx) < 1/lam))[0]
+    # tmpy = (np.where(np.fabs(ky) < 1/lam))[0]
+    # Fr_fft[tmpx[0]:tmpx[len(tmpx)-1],
+    #        tmpy[0]:tmpy[len(tmpy)-1],:] = np.float64(1e-6)
+    kxNeg = (np.where(kx[fnx//2:] > -1/lam))[0]
+    kxPos = (np.where(kx[:fnx//2] < +1/lam))[0]
+    kyNeg = (np.where(ky[fny//2:] > -1/lam))[0]
+    kyPos = (np.where(ky[:fny//2] < +1/lam))[0]
+    pdb.set_trace()
     print("Performing inverse transform")
+    # pdb.set_trace()
     for it in np.arange(fnt):
         Fr[:,:,it] = np.fft.irfft2(Fr_fft[:,:,it],
-                                   s=[plane['nx'],plane['ny']])
-    # print("Creating image...")
-    # maxAbs = np.nanmax(abs(Fr))
-    # vmin = -maxAbs
-    # vmax = +maxAbs
-    # plt.pcolormesh(Fr.T,cmap='seismic',vmin=vmin,vmax=vmax,rasterized=True)
-    # plt.colorbar()
-    # print("Done")
-    # savePath = os.path.join(homePath,basePath,projPath,plotPath,
-    #                         'Er-filtered.pdf')
-    # print("Saving",savePath,"...")
-    # plt.savefig(savePath,bbox_inches='tight',dpi=400)
-    # print("Done")
+                                   s=Fr.shape[0:2])
+
+if fft_images:
+    print("Creating images...")
+    for it in np.arange(nt):
+        image = Fr_fft[:,:,it]
+        image = image.real
+        image = np.fft.fftshift(image,axes=0)
+        image[fnx//2-dcw:fnx//2+dcw,:] = np.float64(1e-6)
+        image /= np.nanmax(image)
+        image = 10*np.log10(np.square(image))
+        vmin = -30
+        vmax = 0
+        fig = plt.figure()
+        ax = fig.gca()
+        im = ax.pcolormesh(image.T,
+                           cmap='Spectral_r',
+                           vmin=vmin,vmax=vmax,
+                           rasterized=True)
+        ax.set_aspect('equal')
+        ax.set_position([0.10,0.10,0.70,0.35])
+        cbar_ax = fig.add_axes([0.85,0.15,0.02,0.35])
+        fig.colorbar(im,cax=cbar_ax).set_label('Spectral Power [dB]')
+        savePath = os.path.join(homePath,basePath,projPath,plotPath,
+                                'Er_fft-filtered-'+strStep[it]+'.pdf')
+        print("Saving",savePath,"...")
+        plt.savefig(savePath,bbox_inches='tight',dpi=400)
+
+    for it in np.arange(nt):
+        image = Fr[:,:,it]
+        vmin = 0
+        vmax = np.nanmax(Fr)
+        fig = plt.figure()
+        ax = fig.gca()
+        im = ax.pcolormesh(image.T,
+                           cmap='gist_heat',
+                           vmin=vmin,vmax=vmax,
+                           rasterized=True)
+        ax.set_aspect('equal')
+        ax.set_position([0.10,0.10,0.70,0.35])
+        cbar_ax = fig.add_axes([0.85,0.15,0.02,0.35])
+        fig.colorbar(im,cax=cbar_ax).set_label('|E| [V/m]')
+        savePath = os.path.join(homePath,basePath,projPath,plotPath,
+                                'Er-filtered-'+strStep[it]+'.pdf')
+        print("Saving",savePath,"...")
+        plt.savefig(savePath,bbox_inches='tight',dpi=400)
 
 if plot_mean_y:
     print("Calculating y-axis mean...")
