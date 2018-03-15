@@ -57,7 +57,7 @@ plane = {'nx':
          'dy':
          params['dx']}
 
-##==Spatial range for full plot
+##==Spatial range of data to extract
 pWidth = 64
 x0 = int(3*plane['nx']/4 - pWidth)
 xf = int(3*plane['nx']/4 + pWidth)
