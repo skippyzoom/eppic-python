@@ -14,6 +14,9 @@ projPath = 'parametric_wave/run005/'
 dataName = 'den1'
 dataPath = 'data/eppic/'
 
+##==Declare rotation, if any
+k_rot = 3
+
 ##==Declare plotting preferences
 plotPath = 'python_images'
 plotType = 'pdf'
@@ -42,14 +45,24 @@ print("Reading parameter file...")
 params = eppic_io.read_parameters(path=wd)
 
 ##==Set up image plane
-plane = {'nx':
-         params['ny']//params['nout_avg'],
-         'ny':
-         params['nx']*params['nsubdomains']//params['nout_avg'],
-         'dx':
-         params['dy'],
-         'dy':
-         params['dx']}
+if k_rot % 2 eq 0:
+    plane = {'nx':
+             params['nx']*params['nsubdomains']//params['nout_avg'],
+             'ny':
+             params['ny']//params['nout_avg'],
+             'dx':
+             params['dx']}
+             'dy':
+             params['dy'],
+else:
+    plane = {'nx':
+             params['ny']//params['nout_avg'],
+             'ny':
+             params['nx']*params['nsubdomains']//params['nout_avg'],
+             'dx':
+             params['dy'],
+             'dy':
+             params['dx']}
 
 ##==Spatial range for full plot
 x0 = 0
@@ -71,7 +84,7 @@ with h5py.File(dataFile,'r') as f:
     fdata = f['/'+readName][:]
 
 ##==Adjust data
-fdata = np.rot90(fdata,k=3)
+fdata = np.rot90(fdata,k=rot_k)
 fdata = fdata[x0:xf,y0:yf]
 
 ##==Calculate gradient for efield
