@@ -39,7 +39,6 @@ except OSError:
 #-->Write an eppic_io function to set default values
 print("Reading parameter file...")
 params = eppic_io.read_parameters(path=wd)
-print("Done")
 
 ##==Choose time steps to plot
 ntMax = eppic_io.calc_timesteps(path=wd)
@@ -73,15 +72,31 @@ y0Rz = y0Lz
 yfRz = yfLz
 
 ##==Read data file
-print("Reading "+dataName+"...")
+if dataName[0] is 'E':
+    readName = 'phi'
+else:
+    readName = dataName
+print("Reading "+readName+"...")
 with h5py.File(dataFile,'r') as f:
-    data = f['/'+dataName][:]
-print("Done")
+    data = f['/'+readName][:]
 
 ##==Adjust data
-# data = np.flipud(data)
 data = np.rot90(data,k=3)
 data = data[x0:xf,y0:yf]
+
+##==Calculate gradient for efield
+if dataName[0] is 'E':
+    print("Calculating E from phi...")
+    Ex = np.zeros_like(data)
+    Ey = np.zeros_like(data)
+    for it in np.arange(nt):
+        tmp = np.gradient(data[:,:,it])
+        Ex[:,:,it] = -tmp[0]
+        Ey[:,:,it] = -tmp[1]
+    if dataName is 'Er':
+        Er = np.sqrt(Fx*Fx + Fy*Fy)
+    if dataName is 'Et':
+        Ft = np.arctan2(Fy,Fx)
 
 ##==Create axis vectors
 xg = params['dx']*np.linspace(x0,xf,xf-x0)
@@ -90,10 +105,22 @@ yg = params['dy']*np.linspace(y0,yf,yf-y0)
 ##==Set data limits
 #-->Write a function to create a dict of graphics
 #   preferences, given the name of a data quantity?
-maxAbs = np.nanmax(abs(data))
-vmin = -maxAbs
-vmax = +maxAbs
-#pdb.set_trace()
+if dataName[0:3] is 'den':
+    vmin = -np.nanmax(abs(data))
+    vmax = +np.nanmax(abs(data))
+if dataName is 'phi'
+    vmin = -np.nanmax(abs(data))
+    vmax = +np.nanmax(abs(data))
+if dataName is 'Ex' or 'Ey':
+    vmin = -np.nanmax(abs(data))
+    vmax = +np.nanmax(abs(data))
+if dataName is 'Er':
+    vmin = 0
+    vmax = np.nanmax(data)
+if dataName is 'Et':
+    vmin = -np.pi
+    vmax = +np.pi
+
 ##==Create image
 rasterized = True
 cmap = 'PiYG'
@@ -156,8 +183,6 @@ botR.set_ylabel('Vertical [m]')
 botR.set_xticks(plane['dx']*np.linspace(x0Rz,xfRz,5))
 botR.set_yticks(plane['dy']*np.linspace(y0Rz,yfRz,5))
 botR.set_aspect('equal')
-
-print("Done")
 
 ##==Save image
 print("Saving",savePath,"...")
