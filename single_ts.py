@@ -3,7 +3,6 @@ import os
 import h5py
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.patches as pat
 import pdb
 import eppic_io
 
@@ -15,7 +14,7 @@ dataName = 'den1'
 dataPath = 'data/eppic/'
 
 ##==Declare rotation, if any
-k_rot = 3
+rot_k = 3
 
 ##==Declare plotting preferences
 plotPath = 'python_images'
@@ -45,15 +44,15 @@ print("Reading parameter file...")
 params = eppic_io.read_parameters(path=wd)
 
 ##==Set up image plane
-if k_rot % 2 eq 0:
+if rot_k % 2 == 0:
     plane = {'nx':
              params['nx']*params['nsubdomains']//params['nout_avg'],
              'ny':
              params['ny']//params['nout_avg'],
              'dx':
-             params['dx']}
+             params['dx'],
              'dy':
-             params['dy'],
+             params['dy']}
 else:
     plane = {'nx':
              params['ny']//params['nout_avg'],
