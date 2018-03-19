@@ -85,5 +85,17 @@ def calc_timesteps(path='./'):
         print("Calculating time steps from *.h5 files")
         return len(glob.glob(path+'/parallel/*.h5'))
 
-# def set_default(default):
-#     """Set a variable to a default value if the variable is undefined."""
+def set_basepath():
+    """Determine the machine-specific path to simulation data."""
+
+    import os
+
+    hostname = os.uname()[1]
+    if hostname.find('scc') >= 0:
+        return '/projectnb/eregion/may/Stampede_runs/'
+    elif hostname.find('stampede') >= 0:
+        return '/scratch/02994/may/'
+    elif hostname.find('Matthews') >= 0:
+        return '/Users/matthewyoung/Documents/BU/research/Projects/'
+    else:
+        return './'
