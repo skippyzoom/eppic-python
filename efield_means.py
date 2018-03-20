@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import os
+from pathlib import Path
 import h5py
 import numpy as np
 import matplotlib.pyplot as plt
@@ -9,37 +10,30 @@ import eppic_io
 ##==Set options
 use_rms = False
 
-##==Declare project path
-projPath = 'parametric_wave/run005/'
-
-##==Declare data directory
-dataPath = 'data/eppic/'
+##==Declare project 
+projName = 'parametric_wave/run005/'
 
 ##==Declare rotation, if any
 rot_k = 3
 
 ##==Declare plotting preferences
-plotPath = 'python_images'
+plotDir = 'python_images'
 plotType = 'pdf'
 
 ##==Set up standard path info
-homePath = os.path.expanduser('~')
-# basePath = 'Research'
-basePath = 'Documents/BU/research/Projects'
-wd = os.path.join(homePath,basePath,projPath,dataPath)
-savePath = os.path.join(homePath,basePath,projPath,plotPath)
+paths = eppic_io.set_paths()
+basePath = Path(paths[0])
+dataPath = basePath / projName / Path(paths[1])
+savePath = basePath / projName / plotDir
 
 ##==Choose time step to plot
-ntMax = eppic_io.calc_timesteps(path=wd)
+ntMax = eppic_io.calc_timesteps(path=str(dataPath))
 # timeStep = np.arange(1,ntMax,ntMax//4)
 timeStep = np.linspace(1,ntMax-1,4,dtype='int')
 nt = len(timeStep)
 
 ##==Make the image directory, if necessary
-try:
-    os.mkdir(os.path.join(homePath,basePath,projPath,plotPath))
-except OSError:
-    pass
+if not savePath.exists(): savePath.mkdir()
 
 ##==Read parameter file
 #-->Write an eppic_io function to set default values
