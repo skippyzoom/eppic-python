@@ -9,7 +9,14 @@ def read_parameters(name='eppic.i',path='./',comment=';'):
     with 'comment'.
     """
 
-    rfn = path+name
+    import os
+    from pathlib import Path
+    import pdb
+
+    #-->Check if path is a string or PosixPath
+    rfn = os.path.join(str(path),name)
+    # rfn = path / Path(name)
+    # pdb.set_trace()
     try:
         rf = open(rfn,'r')
     except OSError:
@@ -68,10 +75,17 @@ def clean_params(path='./'):
     print("Created",wfn)
 
 def calc_timesteps(path='./'):
-    """Calculate the actual number of time steps in a simulation run."""
+    """Calculate the actual number of time steps in a simulation run.
+
+    This function checks for the existence of typical informational
+    files from an EPPIC run and attempts to calculate the maximum
+    available number of time steps for that run. The calculated value
+    is different from params.nt in the case that the run timed out.
+    """
 
     import os, glob
 
+    path = str(path)
     fn_list = [os.path.join(path,'moments1.out'),
                os.path.join(path,'moments0.out'),
                os.path.join(path,'domain000','moments1.out'),
@@ -112,3 +126,65 @@ def set_paths():
     else:
         return ['./',
                 './']
+
+def imgplane(dataName,params,
+             dataPath='./',
+             ranges=[[0,1],[0,1]],timeStep=0,rot_k=0):
+    """Return a (2+1)-D array of simulation data for imaging
+
+    This function reads HDF data from an EPPIC run and extracts the
+    requested 2-D plane at each time step, and it manipulates it 
+    according to given parameters.
+    """
+
+    import os
+    import h5py
+    import numpy as np
+
+    ##==Set up image plane
+    if rot_k % 2 == 0:
+        plane = {'nx':
+                 params['nx']*params['nsubdomains']//params['nout_avg'],
+                 'ny':
+                 params['ny']//params['nout_avg'],
+                 'dx':
+                 params['dx'],
+                 'dy':
+                 params['dy']}
+    else:
+        plane = {'nx':
+                 params['ny']//params['nout_avg'],
+                 'ny':
+                 params['nx']*params['nsubdomains']//params['nout_avg'],
+                 'dx':
+                 params['dy'],
+                 'dy':
+                 params['dx']}
+
+    ##==Set up the data array
+    nts = len(timeStep)
+    strStep = []
+    fdata = np.zeros((params['nx']*params['nsubdomains'],
+                      params['ny'],nts))
+
+    ##==Read data at each time step
+    for it,ts in enumerate(timeStep):
+        strStep.append('{:06d}'.format(params['nout']*ts))
+        fileName = 'parallel'+strStep[it]+'.h5'
+        # dataFile = os.path.join(homePath,basePath,projPath,dataPath,
+        #                         'parallel',fileName)
+        dataFile = os.path.join(dataPath,'parallel',fileName)
+        print("Reading",dataName,"from",fileName,"...")
+        with h5py.File(dataFile,'r') as f:
+            fdata[:,:,it] = np.array(f['/'+dataName])
+
+    ##==Manipulate data
+    fdata = np.rot90(fdata,k=rot_k)
+    x0 = int(plane['nx']*ranges[0][0])
+    xf = int(plane['nx']*ranges[0][1])
+    y0 = int(plane['ny']*ranges[1][0])
+    yf = int(plane['ny']*ranges[1][1])
+    fdata = fdata[x0:xf,y0:yf]
+
+    ##==Return
+    return fdata,plane
