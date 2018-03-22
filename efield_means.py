@@ -30,7 +30,7 @@ savePath = basePath / projName / plotDir
 ntMax = eppic_io.calc_timesteps(path=str(dataPath))
 # timeStep = np.arange(1,ntMax,ntMax//4)
 timeStep = np.linspace(1,ntMax-1,4,dtype='int')
-nt = len(timeStep)
+nts = len(timeStep)
 
 ##==Make the image directory, if necessary
 if not savePath.exists(): savePath.mkdir()
@@ -69,7 +69,7 @@ yf = plane['ny']
 ##==Read data file
 strStep = []
 fdata = np.zeros((params['nx']*params['nsubdomains'],
-                  params['ny'],nt))
+                  params['ny'],nts))
 for it,ts in enumerate(timeStep):
     strStep.append('{:06d}'.format(params['nout']*ts))
     fileName = 'parallel'+strStep[it]+'.h5'
