@@ -10,6 +10,9 @@ import eppic_io
 ##==Set options
 use_rms = False
 
+##==Declare data name
+dataName = 'phi'
+
 ##==Declare project 
 projName = 'parametric_wave/run005/'
 
@@ -38,50 +41,14 @@ if not savePath.exists(): savePath.mkdir()
 ##==Read parameter file
 #-->Write an eppic_io function to set default values
 print("Reading parameter file...")
-params = eppic_io.read_parameters(path=wd)
+params = eppic_io.read_parameters(path=str(dataPath))
 
-##==Set up image plane
-if rot_k % 2 == 0:
-    plane = {'nx':
-             params['nx']*params['nsubdomains']//params['nout_avg'],
-             'ny':
-             params['ny']//params['nout_avg'],
-             'dx':
-             params['dx'],
-             'dy':
-             params['dy']}
-else:
-    plane = {'nx':
-             params['ny']//params['nout_avg'],
-             'ny':
-             params['nx']*params['nsubdomains']//params['nout_avg'],
-             'dx':
-             params['dy'],
-             'dy':
-             params['dx']}
-
-##==Spatial range for full plot
-x0 = 0
-xf = plane['nx']
-y0 = 0
-yf = plane['ny']
-
-##==Read data file
-strStep = []
-fdata = np.zeros((params['nx']*params['nsubdomains'],
-                  params['ny'],nts))
-for it,ts in enumerate(timeStep):
-    strStep.append('{:06d}'.format(params['nout']*ts))
-    fileName = 'parallel'+strStep[it]+'.h5'
-    dataFile = os.path.join(homePath,basePath,projPath,dataPath,
-                            'parallel',fileName)
-    print("Reading phi from",fileName,"...")
-    with h5py.File(dataFile,'r') as f:
-        fdata[:,:,it] = np.array(f['/phi'])
-
-##==Adjust data
-fdata = np.rot90(fdata,k=rot_k)
-fdata = fdata[x0:xf,y0:yf]
+##==Get image plane and data
+fdata,plane = eppic_io.imgplane(dataName,params,
+                                dataPath=str(dataPath),
+                                ranges=[[0,1],[0,1]],
+                                timeStep=timeStep,
+                                rot_k=rot_k)
 
 ##==Calculate gradient for efield
 print("Calculating E from phi...")
