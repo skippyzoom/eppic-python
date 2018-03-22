@@ -97,14 +97,16 @@ Et = np.arctan2(Ey,Ex)
 xdata = params['dx']*np.linspace(x0,xf,xf-x0)
 ydata = params['dy']*np.linspace(y0,yf,yf-y0)
 
-##==Set data limits
-#-->Write a function to create a dict of graphics
-#   preferences, given the name of a data quantity?
-
+#------------------------#
+# Reduce Ex along x axis #
+#------------------------#
+##==Calculate RMS or mean
 if use_rms:
     image = np.sqrt(np.nanmean(np.square(Ex),axis=0))
 else:
     image = np.nanmean(Ex,axis=0)
+
+##==Create image
 fig = plt.figure()
 ax = fig.gca()
 for it,ts in enumerate(timeStep):
@@ -118,10 +120,16 @@ savePath = os.path.join(homePath,basePath,projPath,plotPath,plotName)
 print("Saving",savePath,"...")
 plt.savefig(savePath,bbox_inches='tight',dpi=400)
 
+#------------------------#
+# Reduce Ex along y axis #
+#------------------------#
+##==Calculate RMS or mean
 if use_rms:
     image = np.sqrt(np.nanmean(np.square(Ex),axis=1))
 else:
     image = np.nanmean(Ex,axis=1)
+
+##==Create image
 fig = plt.figure()
 ax = fig.gca()
 for it,ts in enumerate(timeStep):
@@ -135,10 +143,16 @@ savePath = os.path.join(homePath,basePath,projPath,plotPath,plotName)
 print("Saving",savePath,"...")
 plt.savefig(savePath,bbox_inches='tight',dpi=400)
 
+#------------------------#
+# Reduce Ey along x axis #
+#------------------------#
+##==Calculate RMS or mean
 if use_rms:
     image = np.sqrt(np.nanmean(np.square(Ey),axis=0))
 else:
     image = np.nanmean(Ey,axis=0)
+
+##==Create image
 fig = plt.figure()
 ax = fig.gca()
 for it,ts in enumerate(timeStep):
@@ -152,10 +166,16 @@ savePath = os.path.join(homePath,basePath,projPath,plotPath,plotName)
 print("Saving",savePath,"...")
 plt.savefig(savePath,bbox_inches='tight',dpi=400)
 
+#------------------------#
+# Reduce Ey along y axis #
+#------------------------#
+##==Calculate RMS or mean
 if use_rms:
     image = np.sqrt(np.nanmean(np.square(Ey),axis=1))
 else:
     image = np.nanmean(Ey,axis=1)
+
+##==Create image
 fig = plt.figure()
 ax = fig.gca()
 for it,ts in enumerate(timeStep):
