@@ -127,9 +127,88 @@ def set_paths():
         return ['./',
                 './']
 
-def imgplane(dataName,params,
+def read_ph5(dataName,
+             ext='.h5',
+             timeStep=0,
+             axes='xy',
+             dataType='float',
+             dataIsFT=0,
              dataPath='./',
-             ranges=[[0,1],[0,1]],timeStep=0,rot_k=0):
+             infoPath='./'):
+
+    """Create a (2+1)-D data set from EPPIC HDF data.
+    
+    This function reads HDF data time steps from an EPPIC run and
+    extracts a 2-D plane at each time step, the returns the resultant
+    (2+1)-D array.
+    """
+
+    import os
+    import numpy as np
+    import h5py
+    import pdb
+
+    ##==Ensure string path for h5py
+    dataPath = str(dataPath)
+
+    ##==Read in run parameters
+    params = read_parameters(path=infoPath)
+
+    ##==Set up the data array
+    nts = len(timeStep)
+    strStep = []
+    if params['ndim_space'] == 2:
+        fdata = np.zeros((params['nx']*params['nsubdomains'],params['ny'],
+                          nts),dtype=dataType)
+    elif params['ndim_space'] == 3:
+        if axes == 'xy' or axes == 'yx':
+            fdata = np.zeros((params['nx']*params['nsubdomains'],params['ny'],
+                              nts),dtype=dataType)
+        elif axes == 'xz' or axes == 'zx':
+            fdata = np.zeros((params['nx'],params['nz'],nts),dtype=dataType)
+        elif axes == 'yz' or axes == 'zy':
+            fdata = np.zeros((params['ny'],params['nz'],nts),dtype=dataType)
+        elif axes == 'all':
+            fdata = np.zeros((params['nx']*params['nsubdomains'],params['ny'],
+                              params['nz'],nts),dtype=dataType)
+        else:
+            raise IOError('Error in ndim_space')
+
+    ##==Read data at each time step
+    for it,ts in enumerate(timeStep):
+        strStep.append('{:06d}'.format(params['nout']*ts))
+        fileName = 'parallel'+strStep[it]+'.h5'
+        dataFile = os.path.join(dataPath,fileName)
+        print("Reading",dataName,"from",fileName,"...")
+        with h5py.File(dataFile,'r') as f:
+            tmp = np.array(f['/'+dataName])
+            if tmp.ndim == 2:
+                fdata[:,:,it] = tmp
+            elif tmp.ndim == 3:
+                if axes == 'xy' or axes == 'yx':
+                    fdata[:,:,it] = tmp[:,:,0]
+                elif axes == 'xz' or axes == 'zx':
+                    fdata[:,:,it] = tmp[:,0,:]
+                elif axes == 'yz' or axes == 'zy':
+                    fdata[:,:,it] = tmp[0,:,:]
+                elif axes == 'all':
+                    fdata[:,:,:,it] = tmp
+            else:
+                raise IOError('Error in data dimensions')
+
+    ##==Return data
+    return fdata
+
+def imgplane(dataName,
+             axes='xy',
+             timeStep=0,
+             rotate=0,
+             fft_direction=0,
+             fft_n=[0,0,0],
+             calc_gradient=0,
+             dataPath='./',
+             infoPath='./'):
+
     """Return a (2+1)-D array of simulation data for imaging
 
     This function reads HDF data from an EPPIC run and extracts the
@@ -140,51 +219,75 @@ def imgplane(dataName,params,
     import os
     import h5py
     import numpy as np
-
-    ##==Set up image plane
-    if rot_k % 2 == 0:
-        plane = {'nx':
-                 params['nx']*params['nsubdomains']//params['nout_avg'],
-                 'ny':
-                 params['ny']//params['nout_avg'],
-                 'dx':
-                 params['dx'],
-                 'dy':
-                 params['dy']}
-    else:
-        plane = {'nx':
-                 params['ny']//params['nout_avg'],
-                 'ny':
-                 params['nx']*params['nsubdomains']//params['nout_avg'],
-                 'dx':
-                 params['dy'],
-                 'dy':
-                 params['dx']}
-
-    ##==Set up the data array
-    nts = len(timeStep)
-    strStep = []
-    fdata = np.zeros((params['nx']*params['nsubdomains'],
-                      params['ny'],nts))
+    import pdb
 
     ##==Read data at each time step
-    for it,ts in enumerate(timeStep):
-        strStep.append('{:06d}'.format(params['nout']*ts))
-        fileName = 'parallel'+strStep[it]+'.h5'
-        # dataFile = os.path.join(homePath,basePath,projPath,dataPath,
-        #                         'parallel',fileName)
-        dataFile = os.path.join(dataPath,'parallel',fileName)
-        print("Reading",dataName,"from",fileName,"...")
-        with h5py.File(dataFile,'r') as f:
-            fdata[:,:,it] = np.array(f['/'+dataName])
+    fdata = read_ph5(dataName,
+                     timeStep=timeStep,
+                     # axes=plane['axes'],
+                     axes=axes,
+                     dataType='float',
+                     dataPath=dataPath,
+                     infoPath=infoPath)
 
-    ##==Manipulate data
-    fdata = np.rot90(fdata,k=rot_k)
-    x0 = int(plane['nx']*ranges[0][0])
-    xf = int(plane['nx']*ranges[0][1])
-    y0 = int(plane['ny']*ranges[1][0])
-    yf = int(plane['ny']*ranges[1][1])
-    fdata = fdata[x0:xf,y0:yf]
+    ##==Check data dimensions
+    try:
+        fdata.ndim == 3
+    except:
+        IOError('Expected fdata to be (2+1)-D')
+
+    ##==Establish full dimensions
+    params = read_parameters(path=infoPath)
+    nx = fdata.shape[0]
+    ny = fdata.shape[1]
+    nt = fdata.shape[2]
+    dx = params['dx']
+    dy = params['dy']
+
+    ##==Create arrays of x- and y-axis data points
+    xdata = dx*np.arange(0,nx)
+    ydata = dy*np.arange(0,ny)
+
+    ##==Rotate data, if requested
+    fdata = np.rot90(fdata,k=rotate)
+    if rotate % 2 == 1: xdata,ydata = ydata,xdata
+
+    ##==Set up output container
+    data_out = {'x':xdata, 'y':ydata}
+
+    ##==Calculate gradient, if requested
+    if calc_gradient:
+        Fx = np.zeros_like(fdata)
+        Fy = np.zeros_like(fdata)
+        for it in np.arange(nt):
+            tmp = np.gradient(fdata[:,:,it])
+            Fx[:,:,it] = tmp[0]
+            Fy[:,:,it] = tmp[1]
+
+    ##==Calculate FFT, if requested
+    if fft_direction != 0: 
+        if fft_n == [0,0,0]: fft_n = [nx,ny,nt]
+        if calc_gradient:
+            Fx.astype(complex)
+            Fy.astype(complex)
+            if fft_direction < 0:
+                for it in np.arange(nt):
+                    Fx[:,:,it] = np.fft.fft2(Fx[:,:,it],s=fft_n)
+                    Fy[:,:,it] = np.fft.fft2(Fy[:,:,it],s=fft_n)
+            elif fft_direction > 0:
+                for it in np.arange(nt):
+                    Fx[:,:,it] = np.fft.ifft2(Fx[:,:,it],s=fft_n)
+                    Fy[:,:,it] = np.fft.ifft2(Fy[:,:,it],s=fft_n)
+        else:
+            fdata.astype(complex)
+            if fft_direction < 0:
+                for it in np.arange(nt):
+                    fdata[:,:,it] = np.fft.fft2(fdata[:,:,it],s=fft_n)
+            elif fft_direction > 0:
+                for it in np.arange(nt):
+                    fdata[:,:,it] = np.fft.ifft2(fdata[:,:,it],s=fft_n)
 
     ##==Return
-    return fdata,plane
+    if calc_gradient: data_out['f'] = {'x':Fx, 'y':Fy}
+    else: data_out['f'] = fdata
+    return data_out
