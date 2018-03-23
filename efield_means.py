@@ -26,12 +26,12 @@ plotType = 'pdf'
 ##==Set up standard path info
 paths = eppic_io.set_paths()
 basePath = Path(paths[0])
-dataPath = basePath / projName / Path(paths[1])
+infoPath = basePath / projName / Path(paths[1])
+dataPath = infoPath / 'parallel'
 savePath = basePath / projName / plotDir
 
 ##==Choose time step to plot
-ntMax = eppic_io.calc_timesteps(path=str(dataPath))
-# timeStep = np.arange(1,ntMax,ntMax//4)
+ntMax = eppic_io.calc_timesteps(path=str(infoPath))
 timeStep = np.linspace(1,ntMax-1,4,dtype='int')
 nts = len(timeStep)
 
@@ -41,14 +41,21 @@ if not savePath.exists(): savePath.mkdir()
 ##==Read parameter file
 #-->Write an eppic_io function to set default values
 print("Reading parameter file...")
-params = eppic_io.read_parameters(path=str(dataPath))
+params = eppic_io.read_parameters(path=str(infoPath))
+
+##==Create plane dictionary
+axes = 'xy'
 
 ##==Get image plane and data
-fdata,plane = eppic_io.imgplane(dataName,params,
-                                dataPath=str(dataPath),
-                                ranges=[[0,1],[0,1]],
-                                timeStep=timeStep,
-                                rot_k=rot_k)
+fdata = eppic_io.imgplane(dataName,
+                          axes=axes,
+                          timeStep=timeStep,
+                          rotate=rot_k,
+                          fft_direction=0,
+                          calc_gradient=1,
+                          dataPath=dataPath,
+                          infoPath=infoPath)
+pdb.set_trace() #--> Update below for fdata
 
 ##==Calculate gradient for efield
 print("Calculating E from phi...")
